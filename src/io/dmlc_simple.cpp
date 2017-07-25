@@ -3,6 +3,8 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define NOMINMAX
 #include <string>
+
+#include "../utils/to_string.h"
 #include "../utils/io.h"
 
 // implements a single no split version of DMLC

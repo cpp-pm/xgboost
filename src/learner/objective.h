@@ -61,9 +61,8 @@ class IObjFunction{
     return base_score;
   }
 
-#if XGBOOST_USE_BOOST
+#if defined(XGBOOST_USE_CEREAL)
    // Empty serialize for pure virtual base class
-  friend class boost::serialization::access;
   template<class Archive> void serialize(Archive & ar, const unsigned int version) {}
 #endif
     

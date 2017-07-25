@@ -14,59 +14,24 @@
 #include "./utils.h"
 #include "../sync/sync.h"
 
-// =*=*=*=*=*
-
-#define XGBOOST_USE_BOOST 1
-#if XGBOOST_USE_BOOST
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
+#if defined(XGBOOST_USE_CEREAL)
+#  include <cereal/cereal.hpp>
+#  include <cereal/access.hpp>
+#  include <cereal/types/polymorphic.hpp>
+#  include <cereal/types/memory.hpp>
+#  include <cereal/types/vector.hpp>
 #endif
 
-#define XGBOOST_SQUEEZE 1
-#if XGBOOST_SQUEEZE
-#include "half/half.hpp" // must be in path
+#if defined(XGBOOST_SQUEEZE)
+#  include "half/half.hpp"
 typedef int16_t xgboost_int_t;
 typedef uint16_t xgboost_uint_t;
-#define XGBOOST_HIGH_BIT 15
+#  define XGBOOST_HIGH_BIT 15
 #else
 typedef int32_t xgboost_int_t;
 typedef uint32_t xgboost_uint_t;
-#define XGBOOST_HIGH_BIT 31
+#  define XGBOOST_HIGH_BIT 31
 #endif
-
-/*
- Some knowledge of boost serialization is required.  Since xgboost is largely header based,
- I have added all serialization calls as class members direclty in the header files:
- 
- template<class Archive> void serialize(Archive & ar, const unsigned int version)
- 
- So the user can instantiate any archives they want.  This also requires that the 
- classes are "exported" from a cpp file in the user's main project.  There are some
- subtleties within boost related to how this exporting is done (in particular 
- polymorphis classes).  The following is standard boost code (per docs) but is included 
- to give a funtional starting point for anyone who wants to use this feature.
- 
- // Learner (IGradBooster):
- BOOST_SERIALIZATION_ASSUME_ABSTRACT(xgboost::gbm::IGradBooster);
- BOOST_CLASS_EXPORT_GUID(xgboost::gbm::IGradBooster, "IGradBooster");
- BOOST_CLASS_EXPORT_GUID(xgboost::gbm::GBLinear, "GBLinear")
- BOOST_CLASS_EXPORT_GUID(xgboost::gbm::GBTree, "GBTree")
- 
- // Tree model:
- typedef xgboost::tree::RTreeNodeStat RTreeNodeStat;
- typedef xgboost::tree::TreeModel<bst_float, RTreeNodeStat> TreeModel;
- BOOST_SERIALIZATION_ASSUME_ABSTRACT(TreeModel);
- BOOST_CLASS_EXPORT_GUID(TreeModel, "TreeModel");
- BOOST_CLASS_EXPORT_GUID(xgboost::tree::RegTree, "RegTree");
- 
- // Loss function:
- BOOST_SERIALIZATION_ASSUME_ABSTRACT(xgboost::learner::IObjFunction);
- BOOST_CLASS_EXPORT_GUID(xgboost::learner::IObjFunction, "IObjFunction");
- BOOST_CLASS_EXPORT_GUID(xgboost::learner::RegLossObj, "RegLossObj");
-
- */
-
-// =*=*=*=*
 
 namespace xgboost {
 namespace utils {

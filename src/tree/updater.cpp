@@ -2,7 +2,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_DEPRECATE
 #define NOMINMAX
+
 #include <cstring>
+#include <assert.h>
+#include "../utils/to_string.h"
 #include "./updater.h"
 #include "./updater_prune-inl.hpp"
 #include "./updater_refresh-inl.hpp"
@@ -17,7 +20,7 @@
 namespace xgboost {
 namespace tree {
 IUpdater* CreateUpdater(const char *name) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
   assert(false);
 #else
   using namespace std;

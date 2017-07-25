@@ -114,9 +114,8 @@ struct LossType {
     return "rmse";
   }
     
-#if XGBOOST_USE_BOOST
+#if defined(XGBOOST_USE_CEREAL)
     // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
     template<class Archive> void serialize(Archive & ar, const unsigned int version)
     {
         ar & loss_type;
@@ -179,13 +178,11 @@ class RegLossObj : public IObjFunction {
     return loss.ProbToMargin(base_score);
   }
 
-#if XGBOOST_USE_BOOST
-    RegLossObj() {} // boost requires null constructor
-    // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
+  RegLossObj() {} // boost requires null constructor
+
+#if defined(XGBOOST_USE_CEREAL)
     template<class Archive> void serialize(Archive & ar, const unsigned int version)
     {
-        boost::serialization::void_cast_register<RegLossObj, IObjFunction>();
         ar & scale_pos_weight;
         ar & loss;
     }
@@ -258,12 +255,9 @@ class PoissonRegression : public IObjFunction {
     return "poisson-nloglik";
   }
     
-#if XGBOOST_USE_BOOST
-    // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
     template<class Archive> void serialize(Archive & ar, const unsigned int version)
     {
-        boost::serialization::void_cast_register<PoissonRegression, IObjFunction>();
         ar & max_delta_step;
     }
 #endif
@@ -275,6 +269,9 @@ class PoissonRegression : public IObjFunction {
 // softmax multi-class classification
 class SoftmaxMultiClassObj : public IObjFunction {
  public:
+  explicit SoftmaxMultiClassObj()
+      : output_prob(0.f)
+      , nclass(0) {}
   explicit SoftmaxMultiClassObj(int output_prob)
       : output_prob(output_prob) {
     nclass = 0;
@@ -337,6 +334,14 @@ class SoftmaxMultiClassObj : public IObjFunction {
     return "merror";
   }
 
+#if defined(XGBOOST_USE_CEREAL)
+    template<class Archive> void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & nclass;
+        ar & output_prob;
+    }
+#endif
+
  private:
   inline void Transform(std::vector<float> *io_preds, int prob) {
     utils::Check(nclass != 0, "must set num_class to use softmax");
@@ -364,17 +369,6 @@ class SoftmaxMultiClassObj : public IObjFunction {
     }
     if (prob == 0) preds = tmp;
   }
-    
-#if XGBOOST_USE_BOOST
-    // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
-    template<class Archive> void serialize(Archive & ar, const unsigned int version)
-    {
-        boost::serialization::void_cast_register<SoftmaxMultiClassObj, IObjFunction>();
-        ar & nclass;
-        ar & output_prob;
-    }
-#endif
     
   // data field
   int nclass;
@@ -478,6 +472,15 @@ class LambdaRankObj : public IObjFunction {
     return "map";
   }
 
+#if defined(XGBOOST_USE_CEREAL)
+    template<class Archive> void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & loss;
+        ar & num_pairsample;
+        ar & fix_list_weight;
+    }
+#endif
+    
  protected:
   /*! \brief helper information in a list */
   struct ListEntry {
@@ -519,18 +522,6 @@ class LambdaRankObj : public IObjFunction {
   virtual void GetLambdaWeight(const std::vector<ListEntry> &sorted_list,
                                std::vector<LambdaPair> *io_pairs) = 0;
     
-#if XGBOOST_USE_BOOST
-    // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
-    template<class Archive> void serialize(Archive & ar, const unsigned int version)
-    {
-        boost::serialization::void_cast_register<LambdaRankObj, IObjFunction>();
-        ar & loss;
-        ar & num_pairsample;
-        ar & fix_list_weight;
-    }
-#endif
-    
  private:
   // loss function
   LossType loss;
@@ -544,18 +535,18 @@ class PairwiseRankObj: public LambdaRankObj{
  public:
   virtual ~PairwiseRankObj(void) {}
 
+#if defined(XGBOOST_USE_CEREAL)
+    template<class Archive> void serialize(Archive & ar, const unsigned int version)
+    {
+        // noop
+    }
+#endif
+    
  protected:
   virtual void GetLambdaWeight(const std::vector<ListEntry> &sorted_list,
                                std::vector<LambdaPair> *io_pairs) {}
     
-#if XGBOOST_USE_BOOST
-    // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
-    template<class Archive> void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & boost::serialization::base_object<LambdaRankObj>(*this);
-    }
-#endif
+
 };
 
 // beta version: NDCG lambda rank
@@ -610,13 +601,11 @@ class LambdaRankObjNDCG : public LambdaRankObj {
     return static_cast<float>(sumdcg);
   }
     
-#if XGBOOST_USE_BOOST
-    // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
+    // Note: use non-member function for cereal:
     template<class Archive> void serialize(Archive & ar, const unsigned int version)
     {
-        boost::serialization::void_cast_register<LambdaRankObjNDCG, LambdaRankObj>();
-        ar & boost::serialization::base_object<LambdaRankObj>(*this);
+        // noop
     }
 #endif
 };
@@ -709,17 +698,38 @@ class LambdaRankObjMAP : public LambdaRankObj {
                        pairs[i].neg_index, &map_stats);
     }
   }
-#if XGBOOST_USE_BOOST
-    // Empty serialize for pure virtual base class
-    friend class boost::serialization::access;
+
+public:
+#if defined(XGBOOST_USE_CEREAL)
     template<class Archive> void serialize(Archive & ar, const unsigned int version)
     {
-        boost::serialization::void_cast_register<LambdaRankObjMAP, LambdaRankObj>();
-        ar & boost::serialization::base_object<LambdaRankObj>(*this);
+        // noop
     }
 #endif
 };
 
 }  // namespace learner
 }  // namespace xgboost
+
+#if defined(XGBOOST_USE_CEREAL)
+CEREAL_REGISTER_TYPE(xgboost::learner::RegLossObj);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::learner::IObjFunction, xgboost::learner::RegLossObj);
+
+CEREAL_REGISTER_TYPE(xgboost::learner::PoissonRegression);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::learner::IObjFunction, xgboost::learner::PoissonRegression);
+
+CEREAL_REGISTER_TYPE(xgboost::learner::SoftmaxMultiClassObj);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::learner::IObjFunction, xgboost::learner::SoftmaxMultiClassObj);
+
+CEREAL_REGISTER_TYPE(xgboost::learner::LambdaRankObj);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::learner::IObjFunction, xgboost::learner::LambdaRankObj);
+
+CEREAL_REGISTER_TYPE(xgboost::learner::PairwiseRankObj);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::learner::LambdaRankObj, xgboost::learner::PairwiseRankObj);
+
+CEREAL_REGISTER_TYPE(xgboost::learner::LambdaRankObjMAP);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::learner::LambdaRankObj, xgboost::learner::LambdaRankObjMAP);
+
+#endif // XGBOOST_USE_CEREAL
+
 #endif  // XGBOOST_LEARNER_OBJECTIVE_INL_HPP_

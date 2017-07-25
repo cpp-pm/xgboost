@@ -3,6 +3,8 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define NOMINMAX
 #include <string>
+#include <assert.h>
+#include "../utils/to_string.h"
 #include "./io.h"
 #include "../utils/io.h"
 #include "../utils/utils.h"
@@ -17,7 +19,7 @@ DataMatrix* LoadDataMatrix(const char *fname,
                            bool loadsplit,
                            const char *cache_file) {
     
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
   assert(false);
   return nullptr;
 #else
@@ -89,7 +91,7 @@ DataMatrix* LoadDataMatrix(const char *fname,
 }
 
 void SaveDataMatrix(const DataMatrix &dmat, const char *fname, bool silent) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
   if (dmat.magic == DMatrixSimple::kMagic) {
