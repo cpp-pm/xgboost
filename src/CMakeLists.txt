@@ -36,6 +36,7 @@ if(XGBOOST_USE_HALF)
 endif()
 
 # Some platforms (e.g. Linux) need separate math library
+include(CheckLibraryExists)
 check_library_exists(m pow "" LIB_M_REQUIRED)
 if(LIB_M_REQUIRED)
   target_link_libraries(xgboost PUBLIC m)
