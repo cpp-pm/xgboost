@@ -12,11 +12,31 @@
 #include <utility>
 #include <string>
 #include <limits>
+#include <memory>
+#include "assert.h"
 #include "../sync/sync.h"
 #include "../utils/io.h"
 #include "./objective.h"
 #include "./evaluation.h"
 #include "../gbm/gbm.h"
+
+#if defined(XGBOOST_USE_CEREAL)
+template <typename Archive, typename T>
+T* load_as_unique_ptr(Archive &ar)
+{
+    std::unique_ptr<T> wrapper;
+    ar & wrapper;
+    return wrapper.release();
+}
+
+template <typename Archive, typename T>
+void save_as_unique_ptr(Archive &ar, T *&ptr)
+{
+    std::unique_ptr<T> wrapper(ptr);
+    ar & wrapper;
+    wrapper.release();
+}
+#endif
 
 namespace xgboost {
 /*! \brief namespace for learning algorithm */
@@ -54,7 +74,7 @@ class BoostLearner : public rabit::Serializable {
    * \param mats array of pointers to matrix whose prediction result need to be cached
    */
   inline void SetCacheData(const std::vector<DMatrix*>& mats) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     utils::Assert(cache_.size() == 0, "can only call cache data once");
@@ -154,7 +174,7 @@ class BoostLearner : public rabit::Serializable {
    * \brief initialize the model
    */
   inline void InitModel(void) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
       // initialize model
       this->InitObjGBM();
       // reset the base score
@@ -212,7 +232,7 @@ class BoostLearner : public rabit::Serializable {
   }
   // rabit load model from rabit checkpoint
   virtual void Load(rabit::Stream *fi) {
-#if XGBOOST_USE_BOOST
+#if defined(XGBOOST_USE_CEREAL)
     assert(false);
 #else
     // for row split, we should not keep pbuffer
@@ -221,7 +241,7 @@ class BoostLearner : public rabit::Serializable {
   }
   // rabit save model to rabit checkpoint
   virtual void Save(rabit::Stream *fo) const {
-#if XGBOOST_USE_BOOST
+#if defined(XGBOOST_USE_CEREAL)
     assert(false);
 #else
     // for row split, we should not keep pbuffer
@@ -261,22 +281,24 @@ class BoostLearner : public rabit::Serializable {
     gbm_->SaveModel(fo, with_pbuffer);
   }
     
-#if XGBOOST_USE_BOOST
-    friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
+    // Note: see non-member serialize for cereal (raw pointer workaround)
     template<class Archive> void serialize(Archive & ar, const unsigned int version)
     {
         ar & mparam;
         ar & name_obj_;
         ar & name_gbm_;
-        ar & gbm_;
-    
-        ar & obj_;
 
-//        if(Archive::is_loading::value)
-//        {
-//            obj_ = CreateObjFunction(name_obj_.c_str());
-//        }
-
+        if(Archive::is_loading::value)
+        {
+            gbm_ = load_as_unique_ptr<Archive, xgboost::gbm::IGradBooster>(ar);
+            obj_ = load_as_unique_ptr<Archive, xgboost::learner::IObjFunction>(ar);
+        }
+        else
+        {
+            save_as_unique_ptr<Archive, xgboost::gbm::IGradBooster>(ar, gbm_);
+            save_as_unique_ptr<Archive, xgboost::learner::IObjFunction>(ar, obj_);
+        }
     }
 #endif
     
@@ -286,7 +308,7 @@ class BoostLearner : public rabit::Serializable {
    * \param with_pbuffer whether save pbuffer together
    */
   inline void SaveModel(const char *fname, bool with_pbuffer) const {
-#if XGBOOST_USE_BOOST
+#if defined(XGBOOST_USE_CEREAL)
     assert(false);
 #else
     utils::IStream *fo = utils::IStream::Create(fname, "w");
@@ -308,7 +330,7 @@ class BoostLearner : public rabit::Serializable {
    * \param p_train pointer to the matrix used by training
    */
   inline void CheckInit(DMatrix *p_train) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     int ncol = static_cast<int>(p_train->info.info.num_col);
@@ -336,7 +358,7 @@ class BoostLearner : public rabit::Serializable {
    * \param p_train pointer to the data matrix
    */
   inline void UpdateOneIter(int iter, const DMatrix &train) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
       assert(false);
 #else
     if (seed_per_iteration != 0 || rabit::IsDistributed()) {
@@ -365,7 +387,7 @@ class BoostLearner : public rabit::Serializable {
                                  const std::vector<std::string> &evname) {
     std::string res;
       
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     char tmp[256];
@@ -386,7 +408,7 @@ class BoostLearner : public rabit::Serializable {
    * \return a pair of <evaluation name, result>
    */
   std::pair<std::string, float> Evaluate(const DMatrix &data, std::string metric) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
     return std::make_pair(std::string(), 0.f);
 #else
@@ -438,7 +460,7 @@ class BoostLearner : public rabit::Serializable {
                       bool output_margin,
                       std::vector<float> *out_preds,
                       unsigned ntree_limit = 0) const {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     gbm_->Predict(inst, out_preds, ntree_limit);
@@ -452,7 +474,7 @@ class BoostLearner : public rabit::Serializable {
   }
   /*! \brief dump model out */
   inline std::vector<std::string> DumpModel(const utils::FeatMap& fmap, int option) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
     return std::vector<std::string>();
 #else
@@ -551,8 +573,7 @@ class BoostLearner : public rabit::Serializable {
       if (!strcmp("bst:num_feature", name)) num_feature = atoi(val);
     }
       
-#if XGBOOST_USE_BOOST
-      friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
       template<class Archive> void serialize(Archive & ar, const unsigned int version)
       {
           ar & base_score;
@@ -630,6 +651,8 @@ class BoostLearner : public rabit::Serializable {
 }  // namespace learner
 }  // namespace xgboost
 
-//BOOST_CLASS_EXPORT_KEY(xgboost::learner::BoostLearner);
+#if defined(XGBOOST_USE_CEREAL)
+CEREAL_REGISTER_TYPE(xgboost::learner::BoostLearner)
+#endif // defined(XGBOOST_USE_CEREAL)
 
 #endif  // XGBOOST_LEARNER_LEARNER_INL_HPP_

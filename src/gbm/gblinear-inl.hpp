@@ -36,14 +36,14 @@ class GBLinear : public IGradBooster {
     }
   }
   virtual void LoadModel(utils::IStream &fi, bool with_pbuffer) { // NOLINT(*)
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     model.LoadModel(fi);
 #endif
   }
   virtual void SaveModel(utils::IStream &fo, bool with_pbuffer) const { // NOLINT(*)
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else      
     model.SaveModel(fo);
@@ -53,11 +53,9 @@ class GBLinear : public IGradBooster {
     model.InitModel();
   }
     
-#if XGBOOST_USE_BOOST
-    friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
     template <typename Archive> void serialize(Archive& ar, const unsigned int version)
     {
-        boost::serialization::void_cast_register<GBLinear, IGradBooster>();
         ar & model;
     }
 #endif
@@ -66,7 +64,7 @@ class GBLinear : public IGradBooster {
                        int64_t buffer_offset,
                        const BoosterInfo &info,
                        std::vector<bst_gpair> *in_gpair) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else      
     std::vector<bst_gpair> &gpair = *in_gpair;
@@ -165,7 +163,7 @@ class GBLinear : public IGradBooster {
                        std::vector<float> *out_preds,
                        unsigned ntree_limit,
                        unsigned root_index) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     const int ngroup = model.param.num_output_group;
@@ -182,7 +180,7 @@ class GBLinear : public IGradBooster {
   }
   virtual std::vector<std::string> DumpModel(const utils::FeatMap& fmap, int option) {
     std::vector<std::string> v;      
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else      
     std::stringstream fo("");
@@ -280,8 +278,7 @@ class GBLinear : public IGradBooster {
         if (!strcmp(name, "num_output_group")) num_output_group = atoi(val);
       }
         
-#if XGBOOST_USE_BOOST
-        friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
         template <typename Archive> void serialize(Archive& ar, const unsigned int version)
         {
             ar & num_feature;
@@ -297,7 +294,7 @@ class GBLinear : public IGradBooster {
     std::vector<float> weight;
     // initialize the model parameter
     inline void InitModel(void) {
-#if XGBOOST_DO_LEAN        
+#if defined(XGBOOST_DO_LEAN)        
       assert(false);
 #else
       // bias is the last weight
@@ -307,7 +304,7 @@ class GBLinear : public IGradBooster {
     }
     // save the model to file
     inline void SaveModel(utils::IStream &fo) const { // NOLINT(*)
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
       assert(false);
 #else
       fo.Write(&param, sizeof(Param));
@@ -316,7 +313,7 @@ class GBLinear : public IGradBooster {
     }
     // load model from file
     inline void LoadModel(utils::IStream &fi) { // NOLINT(*)
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
       assert(false);
 #else
       XGBOOST_STATIC_ASSERT(sizeof(Param) % sizeof(uint64_t) == 0)
@@ -325,8 +322,7 @@ class GBLinear : public IGradBooster {
 #endif
     }
       
-#if XGBOOST_USE_BOOST
-    friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
     template <typename Archive> void serialize(Archive& ar, const unsigned int version)
     {
         ar & param;
@@ -354,6 +350,10 @@ class GBLinear : public IGradBooster {
 }  // namespace gbm
 }  // namespace xgboost
 
-//BOOST_CLASS_EXPORT_KEY(xgboost::gbm::GBLinear);
+#if defined(XGBOOST_USE_CEREAL)
+#include <cereal/types/polymorphic.hpp>
+CEREAL_REGISTER_TYPE(xgboost::gbm::GBLinear);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::gbm::IGradBooster, xgboost::gbm::GBLinear);
+#endif
 
 #endif  // XGBOOST_GBM_GBLINEAR_INL_HPP_

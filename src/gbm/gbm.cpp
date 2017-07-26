@@ -3,6 +3,8 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define NOMINMAX
 #include <cstring>
+
+#include "../utils/to_string.h"
 #include "./gbm.h"
 #include "./gbtree-inl.hpp"
 #include "./gblinear-inl.hpp"

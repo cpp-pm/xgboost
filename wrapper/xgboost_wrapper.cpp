@@ -9,8 +9,10 @@
 #include <cmath>
 #include <algorithm>
 #include <exception>
+
 // include all std functions
 using namespace std;
+#include "../utils/to_string.h"
 #include "./xgboost_wrapper.h"
 #include "../src/data.h"
 #include "../src/learner/learner-inl.hpp"

@@ -11,6 +11,7 @@
 #include <utility>
 #include <string>
 #include <limits>
+#include <assert.h>
 #include "./gbm.h"
 #include "../utils/omp.h"
 #include "../tree/updater.h"
@@ -87,14 +88,19 @@ class GBTree : public IGradBooster {
     }
   }
     
-#if XGBOOST_USE_BOOST
-    friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
+    // Note: see non member serialize() for cereal (raw pointer use)
     template <typename Archive> void serialize(Archive& ar, const unsigned int version)
     {
-        boost::serialization::void_cast_register<GBTree, IGradBooster>();
         if(Archive::is_loading::value)
         {
             ar & mparam;
+            trees.resize(mparam.num_trees);
+            for(auto &tree : trees)
+            {
+                tree = new xgboost::tree::RegTree;
+            }
+            tree_info.resize(mparam.num_trees);
         }
         else
         {
@@ -102,14 +108,18 @@ class GBTree : public IGradBooster {
             p.num_pbuffer = 0;
             ar & p;
         }
-        ar & mparam;
-        ar & trees;
+
+        for (auto & tree : trees)
+        {
+            ar & *tree;
+        }
+    
         ar & tree_info;
 
         // Comment these two for SaveModel(...) above, with `with_pbuffer == false`
         // Note: Could add a member variable for this
-        //ar & pred_buffer;
-        //ar & pred_counter;
+        // ar & pred_buffer;
+        // ar & pred_counter;
     }
 #endif
     
@@ -136,7 +146,7 @@ class GBTree : public IGradBooster {
                        const BoosterInfo &info,
                        std::vector<bst_gpair> *in_gpair) {
       
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     const std::vector<bst_gpair> &gpair = *in_gpair;
@@ -207,7 +217,7 @@ class GBTree : public IGradBooster {
                        std::vector<float> *out_preds,
                        unsigned ntree_limit,
                        unsigned root_index) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     if (thread_temp.size() == 0) {
@@ -227,7 +237,7 @@ class GBTree : public IGradBooster {
                            const BoosterInfo &info,
                            std::vector<float> *out_preds,
                            unsigned ntree_limit) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     int nthread;
@@ -244,7 +254,7 @@ class GBTree : public IGradBooster {
   }
   virtual std::vector<std::string> DumpModel(const utils::FeatMap& fmap, int option) {
     std::vector<std::string> dump;
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else    
     for (size_t i = 0; i < trees.size(); i++) {
@@ -270,7 +280,7 @@ class GBTree : public IGradBooster {
   }
   // initialize updater before using them
   inline void InitUpdater(void) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     if (tparam.updater_initialized != 0) return;
@@ -300,7 +310,7 @@ class GBTree : public IGradBooster {
                 const BoosterInfo &info,
                 int bst_group) {
       std::vector<tree::RegTree *> new_trees;
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
       assert(false);
 #else
     this->InitUpdater();
@@ -335,7 +345,7 @@ class GBTree : public IGradBooster {
   }
   // commit new trees all at once
   inline void CommitModel(const std::vector<tree::RegTree*> &new_trees, int bst_group) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     for (size_t i = 0; i < new_trees.size(); ++i) {
@@ -351,7 +361,7 @@ class GBTree : public IGradBooster {
                                      int bst_group,
                                      const tree::RegTree &new_tree,
                                      const int* leaf_position) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
       assert(false);
 #else
     const std::vector<bst_uint> &rowset = p_fmat->buffered_rowset();
@@ -426,7 +436,7 @@ class GBTree : public IGradBooster {
                        const BoosterInfo &info,
                        std::vector<float> *out_preds,
                        unsigned ntree_limit) {
-#if XGBOOST_DO_LEAN
+#if defined(XGBOOST_DO_LEAN)
     assert(false);
 #else
     // number of valid trees
@@ -556,8 +566,7 @@ class GBTree : public IGradBooster {
       return (buffer_index + num_pbuffer * bst_group) * (size_leaf_vector + 1);
     }
       
-#if XGBOOST_USE_BOOST
-      friend class boost::serialization::access;
+#if defined(XGBOOST_USE_CEREAL)
       template <typename Archive> void serialize(Archive& ar, const unsigned int version)
       {
           ar & num_trees;
@@ -590,11 +599,14 @@ class GBTree : public IGradBooster {
   std::vector<tree::RegTree::FVec> thread_temp;
   // the updaters that can be applied to each of tree
   std::vector<tree::IUpdater*> updaters;
-};
-
+};    
 }  // namespace gbm
 }  // namespace xgboost
 
-//BOOST_CLASS_EXPORT_KEY(xgboost::gbm::GBTree);
+#if defined(XGBOOST_USE_CEREAL)
+#include <cereal/types/polymorphic.hpp>
+CEREAL_REGISTER_TYPE(xgboost::gbm::GBTree);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(xgboost::gbm::IGradBooster, xgboost::gbm::GBTree);
+#endif // defined(XGBOOST_USE_CEREAL)
 
 #endif  // XGBOOST_GBM_GBTREE_INL_HPP_

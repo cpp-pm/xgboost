@@ -2,6 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_DEPRECATE
 #define NOMINMAX
+#include "../utils/to_string.h"
 #include <ctime>
 #include <string>
 #include <cstring>

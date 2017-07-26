@@ -5,10 +5,12 @@ sugar_include(.)
 ### Always build xgboost as a library
 add_library(xgboost ${XGBOOST_SOURCE} ${RABIT_SOURCE})
 
+if(XGBOOST_ADD_TO_STRING)
+  target_compile_definitions(xgboost PUBLIC XGBOOST_ADD_TO_STRING=1)
+endif()
+
 if(XGBOOST_DO_LEAN)
   target_compile_definitions(xgboost PUBLIC XGBOOST_DO_LEAN=1)
-else()
-  target_compile_definitions(xgboost PUBLIC XGBOOST_DO_LEAN=0)
 endif()
 
 ### Optionally build the executable
@@ -19,17 +21,11 @@ if(XGBOOST_BUILD_EXAMPLES)
   target_link_libraries(xgboost_main xgboost)
 endif()
 
-### If you want to take advantage of boost serialization ...
-if(XGBOOST_USE_BOOST)
-  hunter_add_package(Boost COMPONENTS filesystem system serialization iostreams)
-  find_package(Boost CONFIG REQUIRED filesystem system serialization iostreams)
-  target_link_libraries(xgboost PUBLIC
-  Boost::filesystem
-  Boost::system
-  Boost::serialization
-  Boost::iostreams
-  )
-  target_compile_definitions(xgboost PUBLIC XGBOOST_USE_BOOST=1)
+if(XGBOOST_USE_CEREAL)
+  hunter_add_package(cereal)
+  find_package(cereal CONFIG REQUIRED)
+  target_link_libraries(xgboost PUBLIC cereal::cereal)
+  target_compile_definitions(xgboost PUBLIC XGBOOST_USE_CEREAL=1)
 endif()
 
 if(XGBOOST_USE_HALF)
@@ -40,6 +36,7 @@ if(XGBOOST_USE_HALF)
 endif()
 
 # Some platforms (e.g. Linux) need separate math library
+include(CheckLibraryExists)
 check_library_exists(m pow "" LIB_M_REQUIRED)
 if(LIB_M_REQUIRED)
   target_link_libraries(xgboost PUBLIC m)

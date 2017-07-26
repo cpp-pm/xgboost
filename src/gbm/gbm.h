@@ -40,9 +40,11 @@ class IGradBooster {
    */
   virtual void SaveModel(utils::IStream &fo, bool with_pbuffer) const = 0; // NOLINT(*)
 
-#if XGBOOST_USE_BOOST
-    friend class boost::serialization::access;
-    template <typename Archive> void serialize(Archive& ar, const unsigned int version) {}
+#if defined(XGBOOST_USE_CEREAL)
+  template <typename Archive> void serialize(Archive& ar, const unsigned int version)
+  {
+      // noop
+  }
 #endif
     
   /*!
