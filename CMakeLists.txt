@@ -8,7 +8,7 @@ HunterGate(
   SHA1 "bacf59b6856e37964c8eb298a57e0f6ef37e56d6"
   )
 
-project(xgboost VERSION 0.1)
+project(xgboost VERSION 0.4.6)
 
 # -Wno-narrowing  = Don't warn about type narrowing
 include(CheckCXXCompilerFlag)
