@@ -6,7 +6,7 @@ sugar_include(.)
 add_library(xgboost ${XGBOOST_SOURCE} ${RABIT_SOURCE})
 
 if(XGBOOST_ADD_TO_STRING)
-  target_compile_definitions(xgboost PRIVATE XGBOOST_ADD_TO_STRING=1)
+  target_compile_definitions(xgboost PUBLIC XGBOOST_ADD_TO_STRING=1)
 endif()
 
 if(XGBOOST_DO_LEAN)
