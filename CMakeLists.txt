@@ -25,9 +25,27 @@ include(sugar_include)
 sugar_include(.)
 
 option(SKIP_INSTALL "Skip the package install" OFF)
-option(XGBOOST_USE_CEREAL "Use cereal serialization" ON)
-option(XGBOOST_ADD_TO_STRING "Add standard library std::to_string()" OFF)
+option(XGBOOST_USE_CEREAL "Use cereal serialization" OFF)
 option(XGBOOST_USE_HALF "Support half precision floating point storage" ON)
 option(XGBOOST_DO_LEAN "Build lean library for evaluation only" OFF)
+
+if(XGBOOST_USE_CEREAL)
+#### std::to_string ####
+include(CheckCXXSourceCompiles)  
+check_cxx_source_compiles(
+"
+#include <string>
+int main(int argc, char *argv[])
+{
+    auto str = std::to_string(1);
+}
+" XGBOOST_HAVE_TO_STRING)
+endif()
+
+if(XGBOOST_HAVE_TO_STRING)
+  set(XGBOOST_ADD_TO_STRING OFF)
+else()
+  set(XGBOOST_ADD_TO_STRING ON)
+endif()
 
 add_subdirectory(src)
