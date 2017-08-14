@@ -25,9 +25,11 @@ include(sugar_include)
 sugar_include(.)
 
 option(SKIP_INSTALL "Skip the package install" OFF)
+option(XGBOOST_DO_LEAN "Build lean library for prediction only" OFF)
 option(XGBOOST_USE_CEREAL "Use cereal serialization" OFF)
-option(XGBOOST_USE_HALF "Support half precision floating point storage" ON)
-option(XGBOOST_DO_LEAN "Build lean library for evaluation only" OFF)
+if(XGBOOST_USE_CEREAL)
+  option(XGBOOST_USE_HALF "Support half precision floating point storage" ON)
+endif()
 
 if(XGBOOST_USE_CEREAL)
   #### std::to_string ####
