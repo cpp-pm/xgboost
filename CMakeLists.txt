@@ -30,22 +30,16 @@ option(XGBOOST_USE_HALF "Support half precision floating point storage" ON)
 option(XGBOOST_DO_LEAN "Build lean library for evaluation only" OFF)
 
 if(XGBOOST_USE_CEREAL)
-#### std::to_string ####
-include(CheckCXXSourceCompiles)  
-check_cxx_source_compiles(
-"
-#include <string>
-int main(int argc, char *argv[])
-{
-    auto str = std::to_string(1);
-}
-" XGBOOST_HAVE_TO_STRING)
-endif()
-
-if(XGBOOST_HAVE_TO_STRING)
+  #### std::to_string ####
+  try_compile(XGBOOST_HAVE_TO_STRING "${CMAKE_BINARY_DIR}/compile_tests" "${PROJECT_SOURCE_DIR}/cmake/to_string.cpp")
+  if(XGBOOST_HAVE_TO_STRING)
+    set(XGBOOST_ADD_TO_STRING OFF)
+  else()
+    set(XGBOOST_ADD_TO_STRING ON)
+  endif()
+else(XGBOOST_USE_CEREAL)
+  # This is never needed when CEREAL extensions are disabled
   set(XGBOOST_ADD_TO_STRING OFF)
-else()
-  set(XGBOOST_ADD_TO_STRING ON)
-endif()
+endif(XGBOOST_USE_CEREAL)
 
 add_subdirectory(src)
