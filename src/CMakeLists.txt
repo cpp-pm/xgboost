@@ -5,12 +5,33 @@ sugar_include(.)
 ### Always build xgboost as a library
 add_library(xgboost ${XGBOOST_SOURCE} ${RABIT_SOURCE})
 
-if(XGBOOST_ADD_TO_STRING)
-  target_compile_definitions(xgboost PUBLIC XGBOOST_ADD_TO_STRING=1)
+if(XGBOOST_USE_CEREAL)
+  hunter_add_package(cereal)
+  find_package(cereal CONFIG REQUIRED)
+  target_link_libraries(xgboost PUBLIC cereal::cereal)
+  target_compile_definitions(xgboost PUBLIC XGBOOST_USE_CEREAL=1)
+
+  if(XGBOOST_USE_HALF)
+    hunter_add_package(half)
+    find_package(half CONFIG REQUIRED)
+    target_link_libraries(xgboost PUBLIC half::half)
+    target_compile_definitions(xgboost PUBLIC XGBOOST_SQUEEZE=1)
+  endif()  
+  
+  if(XGBOOST_ADD_TO_STRING)
+    target_compile_definitions(xgboost PUBLIC XGBOOST_ADD_TO_STRING=1)
+  endif()
 endif()
 
 if(XGBOOST_DO_LEAN)
   target_compile_definitions(xgboost PUBLIC XGBOOST_DO_LEAN=1)
+endif()
+
+# Some platforms (e.g. Linux) need separate math library
+include(CheckLibraryExists)
+check_library_exists(m pow "" LIB_M_REQUIRED)
+if(LIB_M_REQUIRED)
+  target_link_libraries(xgboost PUBLIC m)
 endif()
 
 ### Optionally build the executable
@@ -19,27 +40,6 @@ if(XGBOOST_BUILD_EXAMPLES)
   message("XGBOOST_BUILD_EXAMPLES ${XGBOOST_BUILD_EXAMPLES}.......................................")
   add_executable(xgboost_main ${XGBOOST_EXE_SOURCE})
   target_link_libraries(xgboost_main xgboost)
-endif()
-
-if(XGBOOST_USE_CEREAL)
-  hunter_add_package(cereal)
-  find_package(cereal CONFIG REQUIRED)
-  target_link_libraries(xgboost PUBLIC cereal::cereal)
-  target_compile_definitions(xgboost PUBLIC XGBOOST_USE_CEREAL=1)
-endif()
-
-if(XGBOOST_USE_HALF)
-  hunter_add_package(half)
-  find_package(half CONFIG REQUIRED)
-  target_link_libraries(xgboost PUBLIC half::half)
-  target_compile_definitions(xgboost PUBLIC XGBOOST_SQUEEZE=1)
-endif()
-
-# Some platforms (e.g. Linux) need separate math library
-include(CheckLibraryExists)
-check_library_exists(m pow "" LIB_M_REQUIRED)
-if(LIB_M_REQUIRED)
-  target_link_libraries(xgboost PUBLIC m)
 endif()
 
 message("=========SKIP_INSTALL========: ${SKIP_INSTALL}")
