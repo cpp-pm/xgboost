@@ -40,12 +40,16 @@ int main(int argc, char *argv[])
     auto str = std::to_string(1);
 }
 " XGBOOST_HAVE_TO_STRING)
-endif()
 
 if(XGBOOST_HAVE_TO_STRING)
   set(XGBOOST_ADD_TO_STRING OFF)
 else()
   set(XGBOOST_ADD_TO_STRING ON)
 endif()
+
+else(XGBOOST_USE_CEREAL)
+  # This is never needed when CEREAL extensions are disabled
+  set(XGBOOST_ADD_TO_STRING OFF)
+endif(XGBOOST_USE_CEREAL)
 
 add_subdirectory(src)
