@@ -552,8 +552,8 @@ class GPUHistMaker : public TreeUpdater {
     shards.resize(n_devices);
     row_segments.push_back(0);
     for (int d_idx = 0; d_idx < n_devices; ++d_idx) {
-      bst_uint row_end =
-          std::min(static_cast<size_t>(row_begin + shard_size), info->num_row);
+      bst_uint row_end = // cast to prevent: argument types are: (size_t, uint64_t)
+          std::min(static_cast<size_t>(row_begin + shard_size), static_cast<size_t>(info->num_row));
       row_segments.push_back(row_end);
       row_begin = row_end;
     }
@@ -921,8 +921,13 @@ class GPUHistMaker : public TreeUpdater {
   std::vector<int> dList;
 };
 
+#ifndef XGBOOST_SKIP_REGISTER
+// Prevent inclusion errors:
+// Check failed: fmap_.count(name) == 0U (1 vs. 0) grow_gpu_hist already registered
 XGBOOST_REGISTER_TREE_UPDATER(GPUHistMaker, "grow_gpu_hist")
     .describe("Grow tree with GPU.")
     .set_body([]() { return new GPUHistMaker(); });
+#endif
+    
 }  // namespace tree
 }  // namespace xgboost

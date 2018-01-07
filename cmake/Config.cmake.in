@@ -1,0 +1,26 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/@TARGETS_EXPORT_NAME@.cmake")
+check_required_components("@PROJECT_NAME@")
+
+if(@OpenMP_CXX_FOUND@ OR @OPENMP_FOUND@)
+  find_package(OpenMP)
+endif()
+
+find_package(rabit CONFIG REQUIRED)
+find_package(dmlc-core CONFIG REQUIRED)
+
+if(@USE_CUDA@)
+  find_package(CUDA @CUDA_VERSION_STRING@ REQUIRED)
+  if(@USE_NCCL@)
+    find_package(nccl CONFIG REQUIRED)
+  endif()
+endif()
+
+if(@R_LIB@)
+  find_package(LibR REQUIRED)
+endif()
+
+if(@JVM_BINDINGS@)
+  find_package(JNI REQUIRED)
+endif()

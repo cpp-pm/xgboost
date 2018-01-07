@@ -8,6 +8,9 @@
 #include "gtest/gtest.h"
 
 #include "../../../src/gbm/gbtree_model.h"
+
+#define XGBOOST_SKIP_REGISTER
+
 #include "../../../src/tree/updater_gpu_hist.cu"
 
 namespace xgboost {
