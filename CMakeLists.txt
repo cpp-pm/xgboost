@@ -146,16 +146,6 @@ if(USE_CUDA)
     endif()
   endif()
 
-  # Note: Some CMake generators won't support libraries without at least 1 source file:
-  set(xgboost_gpu_tmp ${CMAKE_CURRENT_BINARY_DIR}/tmp/xgboost_gpu.cc)
-  set(xgboost_gpu ${CMAKE_CURRENT_BINARY_DIR}/xgboost_gpu.cc)
-  file(WRITE ${xgboost_gpu_tmp} "")
-  add_custom_command(
-    OUTPUT "${xgboost_gpu}" # >= 1 non cuda file is required on some platforms
-    DEPENDS "${xgboost_gpu_tmp}"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${xgboost_gpu_tmp}" "${xgboost_gpu}"
-    )
-
   # TODO:
   # if(USE_NCCL)
   #   hunter_add_package(nccl)
@@ -163,8 +153,9 @@ if(USE_CUDA)
   #   list(APPEND LINK_LIBRARIES nccl::nccl)
   #   list(APPEND xgboost_defs XGBOOST_USE_NCCL)
   # endif()  
-  
-  cuda_add_library(gpuxgboost ${CUDA_SOURCES} ${xgboost_gpu} STATIC)
+
+  # NOTE_1: some generators require >= 1 non CUDA files, so we add a "dummy" file
+  cuda_add_library(gpuxgboost ${CUDA_SOURCES} cmake/templates/gpu_null.cc STATIC)
   target_include_directories(gpuxgboost PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>")
   target_link_libraries(gpuxgboost ${LINK_LIBRARIES})
   target_compile_definitions(gpuxgboost PUBLIC ${xgboost_defs})
@@ -194,16 +185,6 @@ foreach(dep ${LINK_LIBRARIES})
   target_compile_definitions(objxgboost PUBLIC $<TARGET_PROPERTY:${dep},INTERFACE_COMPILE_DEFINITIONS>)
 endforeach()
 
-# Note: Some CMake generators won't support libraries without at least 1 source file:
-set(xgboost_null_tmp ${CMAKE_CURRENT_BINARY_DIR}/tmp/xgboost_null.cc)
-set(xgboost_null ${CMAKE_CURRENT_BINARY_DIR}/xgboost_null.cc)
-file(WRITE ${xgboost_null_tmp} "")
-add_custom_command(
-  OUTPUT "${xgboost_null}" # >= 1 non-object file is required on some platforms
-  DEPENDS "${xgboost_null_tmp}"
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${xgboost_null_tmp}" "${xgboost_null}"
-  )
-
 # building shared library for R package
 if(R_LIB)
   find_package(LibR REQUIRED)
@@ -216,7 +197,10 @@ if(R_LIB)
   endforeach()
   
   # Shared library target for the R package:
-  add_library(xgboost SHARED ${xgboost_null} $<TARGET_OBJECTS:objxgboost>)
+  # NOTE_2: some generators require >= 1 source files, so we add a "dummy" file
+  # we use a unique filename for each library to avoid potential name collisions
+  # related to archive post-processing.
+  add_library(xgboost SHARED cmake/templates/null.cc $<TARGET_OBJECTS:objxgboost>)
   target_link_libraries(xgboost ${LINK_LIBRARIES})
   foreach(target objxgboost xgboost)
     target_include_directories(${target} PUBLIC "$<BUILD_INTERFACE:${LIBR_INCLUDE_DIRS}>")
@@ -244,7 +228,8 @@ else()
   endif()    
 
   # Library
-  add_library(xgboost ${xgboost_lib_type} ${xgboost_null} $<TARGET_OBJECTS:objxgboost>)
+  # See NOTE_2
+  add_library(xgboost ${xgboost_lib_type} cmake/templates/null.cc $<TARGET_OBJECTS:objxgboost>)
   target_link_libraries(xgboost ${LINK_LIBRARIES})
   if(MINGW)
     # remove the 'lib' prefix to conform to windows convention for shared library names
