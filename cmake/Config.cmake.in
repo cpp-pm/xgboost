@@ -8,7 +8,7 @@ if(@OpenMP_CXX_FOUND@ OR @OPENMP_FOUND@)
 endif()
 
 find_package(rabit CONFIG REQUIRED)
-find_package(dmlc-core CONFIG REQUIRED)
+find_package(dmlc CONFIG REQUIRED)
 
 if(@USE_CUDA@)
   find_package(CUDA @CUDA_VERSION_STRING@ REQUIRED)
