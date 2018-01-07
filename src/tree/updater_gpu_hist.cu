@@ -921,8 +921,13 @@ class GPUHistMaker : public TreeUpdater {
   std::vector<int> dList;
 };
 
+#ifndef XGBOOST_SKIP_REGISTER
+// Prevent inclusion errors:
+// Check failed: fmap_.count(name) == 0U (1 vs. 0) grow_gpu_hist already registered
 XGBOOST_REGISTER_TREE_UPDATER(GPUHistMaker, "grow_gpu_hist")
     .describe("Grow tree with GPU.")
     .set_body([]() { return new GPUHistMaker(); });
+#endif
+    
 }  // namespace tree
 }  // namespace xgboost

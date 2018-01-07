@@ -216,20 +216,13 @@ if(R_LIB)
 
 else()
 
-  option(XGBOOST_BUILD_SHARED "Build shared library" ON)
   option(XGBOOST_BUILD_EXAMPLE "Build example" OFF)
   option(JVM_BINDINGS "Build JVM bindings" OFF)    
   option(GOOGLE_TEST "Build google tests" OFF)
 
-  if(XGBOOST_BUILD_SHARED)
-    set(xgboost_lib_type SHARED)
-  else()
-    set(xgboost_lib_type STATIC)
-  endif()    
-
   # Library
   # See NOTE_2
-  add_library(xgboost ${xgboost_lib_type} cmake/templates/null.cc $<TARGET_OBJECTS:objxgboost>)
+  add_library(xgboost cmake/templates/null.cc $<TARGET_OBJECTS:objxgboost>)
   target_link_libraries(xgboost ${LINK_LIBRARIES})
   if(MINGW)
     # remove the 'lib' prefix to conform to windows convention for shared library names
@@ -253,7 +246,7 @@ else()
   # Executable
   if(XGBOOST_BUILD_EXAMPLE)
     add_executable(runxgboost $<TARGET_OBJECTS:objxgboost> src/cli_main.cc)
-    target_link_libraries(runxgboost ${LINK_LIBRARIES})
+    target_link_libraries(runxgboost xgboost)
     target_compile_definitions(testxgboost PUBLIC ${xgboost_defs})
   endif()
 
@@ -276,7 +269,7 @@ else()
     endif()
     target_compile_definitions(testxgboost PUBLIC ${xgboost_defs})
     target_include_directories(testxgboost PUBLIC src/tree)    
-    target_link_libraries(testxgboost GTest::main ${LINK_LIBRARIES} xgboost)
+    target_link_libraries(testxgboost GTest::main xgboost)
     add_test(TestXGBoost testxgboost)
   endif()
   
