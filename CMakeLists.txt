@@ -101,13 +101,14 @@ find_package(dmlc CONFIG REQUIRED)
 list(APPEND LINK_LIBRARIES dmlc::dmlc)
 
 set(xgboost_exports "")
+set(xgboost_targets "")
 
 if(USE_CUDA)
   
   find_package(CUDA 8.0 REQUIRED)
   cmake_minimum_required(VERSION 3.5)
 
-  list(APPEND xgboost_defs XGBOOST_USE_CUDA)  
+  list(APPEND xgboost_defs XGBOOST_USE_CUDA)
 
   # Compatibiltiy with CMake's CUDA_SELECT_NVCC_ARCH_FLAGS
   # * All     : all CUDA architectures
@@ -162,6 +163,7 @@ if(USE_CUDA)
   
   list(APPEND LINK_LIBRARIES gpuxgboost)
   list(APPEND xgboost_exports gpuxgboost)
+  list(APPEND xgboost_targets gpuxgboost)
   
 endif()
 
@@ -179,11 +181,11 @@ endif()
 # * xgboost   : R configuration or standard
 # * xgboost4j : JVM_BINDINGS == ON
 add_library(objxgboost OBJECT ${SOURCES})
-target_include_directories(gpuxgboost PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")  
 foreach(dep ${LINK_LIBRARIES})
   target_include_directories(objxgboost PUBLIC $<TARGET_PROPERTY:${dep},INTERFACE_INCLUDE_DIRECTORIES>)
   target_compile_definitions(objxgboost PUBLIC $<TARGET_PROPERTY:${dep},INTERFACE_COMPILE_DEFINITIONS>)
 endforeach()
+list(APPEND xgboost_targets objxgboost)
 
 # building shared library for R package
 if(R_LIB)
@@ -241,6 +243,7 @@ else()
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jvm-packages/xgboost4j/src/native>")
     target_compile_definitions(xgboost4j PUBLIC ${xgboost_defs})
     list(APPEND xgboost_exports xgboost4j)
+    list(APPEND xgboost_targets xgboost4j)
   endif()  
 
   # Executable
@@ -275,7 +278,9 @@ else()
   
 endif()
 
-foreach(target objxgboost xgboost)
+list(APPEND xgboost_targets xgboost)
+
+foreach(target ${xgboost_targets})
   target_include_directories(${target} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>" #include "src/common/random.h"
