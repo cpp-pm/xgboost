@@ -238,7 +238,7 @@ else()
 
   # JVM
   if(JVM_BINDINGS)
-    find_package(JNI QUIET REQUIRED)
+    find_package(JNI REQUIRED)
     add_library(xgboost4j SHARED
       $<TARGET_OBJECTS:objxgboost>
       jvm-packages/xgboost4j/src/native/xgboost4j.cpp)
