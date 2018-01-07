@@ -82,7 +82,7 @@ XGB_EXTERN_C int XGBoost4jCallbackDataIterNext(
         batch, jenv->GetFieldID(batchClass, "featureValue", "[F"));
       XGBoostBatchCSR cbatch;
       cbatch.size = jenv->GetArrayLength(joffset) - 1;
-      cbatch.offset = reinterpret_cast<jlong *>(
+      cbatch.offset = reinterpret_cast<long *>( // error: assigning to 'long *' from incompatible type 'jlong *' (aka 'long long *')
           jenv->GetLongArrayElements(joffset, 0));
       if (jlabel != nullptr) {
         cbatch.label = jenv->GetFloatArrayElements(jlabel, 0);
