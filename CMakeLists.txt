@@ -247,7 +247,7 @@ else()
     target_link_libraries(runxgboost xgboost)
     target_compile_definitions(runxgboost PUBLIC ${xgboost_defs})
     if(OpenMP_CXX_FOUND OR OPENMP_FOUND)
-      target_link_libraries(runxgboost PUBLIC ${OpenMP_CXX_FLAGS})      
+      target_link_libraries(runxgboost PUBLIC ${OpenMP_CXX_FLAGS})
     endif()
   endif()
 
