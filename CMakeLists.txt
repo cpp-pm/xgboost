@@ -11,8 +11,6 @@ include(cmake/Utils.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 find_package(OpenMP)
 
-msvc_use_static_runtime()
-
 # Options
 option(USE_CUDA  "Build with GPU acceleration") 
 option(USE_AVX  "Build with AVX instructions. May not produce identical results due to approximate math." OFF) 
@@ -35,9 +33,6 @@ endif()
 # Compiler flags
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-if(OpenMP_CXX_FOUND OR OPENMP_FOUND)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(MSVC)
   # Multithreaded compilation
@@ -230,7 +225,7 @@ else()
     # remove the 'lib' prefix to conform to windows convention for shared library names
     set_target_properties(xgboost PROPERTIES PREFIX "")
   endif()
-
+  
   # JVM
   if(JVM_BINDINGS)
     find_package(JNI REQUIRED)
@@ -250,7 +245,10 @@ else()
   if(XGBOOST_BUILD_EXAMPLE)
     add_executable(runxgboost $<TARGET_OBJECTS:objxgboost> src/cli_main.cc)
     target_link_libraries(runxgboost xgboost)
-    target_compile_definitions(testxgboost PUBLIC ${xgboost_defs})
+    target_compile_definitions(runxgboost PUBLIC ${xgboost_defs})
+    if(OpenMP_CXX_FOUND OR OPENMP_FOUND)        
+      set_property(TARGET runxgboost APPEND PROPERTY LINK_FLAGS ${OpenMP_CXX_FLAGS})
+    endif()
   endif()
 
   # Test
@@ -273,6 +271,9 @@ else()
     target_compile_definitions(testxgboost PUBLIC ${xgboost_defs})
     target_include_directories(testxgboost PUBLIC src/tree)    
     target_link_libraries(testxgboost GTest::main xgboost)
+    if(OpenMP_CXX_FOUND OR OPENMP_FOUND)    
+      set_property(TARGET testxgboost APPEND PROPERTY LINK_FLAGS ${OpenMP_CXX_FLAGS})
+    endif()
     add_test(TestXGBoost testxgboost)
   endif()
   
@@ -286,6 +287,9 @@ foreach(target ${xgboost_targets})
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>" #include "src/common/random.h"
     )
   target_compile_definitions(${target} PUBLIC ${xgboost_defs})
+  if(OpenMP_CXX_FOUND OR OPENMP_FOUND)
+    target_compile_options(${target} PUBLIC ${OpenMP_CXX_FLAGS})
+  endif()
 endforeach()
 
 list(APPEND xgboost_exports xgboost)
