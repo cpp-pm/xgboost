@@ -99,7 +99,8 @@ set(xgboost_exports "")
 set(xgboost_targets "")
 
 if(USE_CUDA)
-  
+
+  set(CUDA_LINK_LIBRARIES_KEYWORD PUBLIC)
   find_package(CUDA 8.0 REQUIRED)
   cmake_minimum_required(VERSION 3.5)
 
@@ -153,7 +154,7 @@ if(USE_CUDA)
   # NOTE_1: some generators require >= 1 non CUDA files, so we add a "dummy" file
   cuda_add_library(gpuxgboost ${CUDA_SOURCES} cmake/templates/gpu_null.cc STATIC)
   target_include_directories(gpuxgboost PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>")
-  target_link_libraries(gpuxgboost ${LINK_LIBRARIES})
+  target_link_libraries(gpuxgboost PUBLIC ${LINK_LIBRARIES})
   target_compile_definitions(gpuxgboost PUBLIC ${xgboost_defs})
   
   list(APPEND LINK_LIBRARIES gpuxgboost)
@@ -198,7 +199,7 @@ if(R_LIB)
   # we use a unique filename for each library to avoid potential name collisions
   # related to archive post-processing.
   add_library(xgboost SHARED cmake/templates/null.cc $<TARGET_OBJECTS:objxgboost>)
-  target_link_libraries(xgboost ${LINK_LIBRARIES})
+  target_link_libraries(xgboost PUBLIC ${LINK_LIBRARIES})
   foreach(target objxgboost xgboost)
     target_include_directories(${target} PUBLIC "$<BUILD_INTERFACE:${LIBR_INCLUDE_DIRS}>")
   endforeach()  
@@ -220,7 +221,7 @@ else()
   # Library
   # See NOTE_2
   add_library(xgboost cmake/templates/null.cc $<TARGET_OBJECTS:objxgboost>)
-  target_link_libraries(xgboost ${LINK_LIBRARIES})
+  target_link_libraries(xgboost PUBLIC ${LINK_LIBRARIES})
   if(MINGW)
     # remove the 'lib' prefix to conform to windows convention for shared library names
     set_target_properties(xgboost PROPERTIES PREFIX "")
@@ -232,7 +233,7 @@ else()
     add_library(xgboost4j SHARED
       $<TARGET_OBJECTS:objxgboost>
       jvm-packages/xgboost4j/src/native/xgboost4j.cpp)
-    target_link_libraries(xgboost4j ${LINK_LIBRARIES} ${JAVA_JVM_LIBRARY})
+    target_link_libraries(xgboost4j PUBLIC ${LINK_LIBRARIES} ${JAVA_JVM_LIBRARY})
     target_include_directories(xgboost4j PUBLIC
       "$<BUILD_INTERFACE:${JNI_INCLUDE_DIRS}>"
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/jvm-packages/xgboost4j/src/native>")
@@ -244,7 +245,7 @@ else()
   # Executable
   if(XGBOOST_BUILD_EXAMPLE)
     add_executable(runxgboost $<TARGET_OBJECTS:objxgboost> src/cli_main.cc)
-    target_link_libraries(runxgboost xgboost)
+    target_link_libraries(runxgboost PUBLIC xgboost)
     target_compile_definitions(runxgboost PUBLIC ${xgboost_defs})
   endif()
 
@@ -287,7 +288,7 @@ foreach(target ${xgboost_targets})
     get_target_property(target_type ${target} TYPE)
     string( COMPARE EQUAL "${target_type}" "OBJECT_LIBRARY" is_object_library)
     if(NOT ${is_object_library})
-      target_link_libraries(${target} ${OpenMP_CXX_FLAGS})
+      target_link_libraries(${target} PUBLIC ${OpenMP_CXX_FLAGS})
     endif()
     
   endif()
