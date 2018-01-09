@@ -246,9 +246,6 @@ else()
     add_executable(runxgboost $<TARGET_OBJECTS:objxgboost> src/cli_main.cc)
     target_link_libraries(runxgboost xgboost)
     target_compile_definitions(runxgboost PUBLIC ${xgboost_defs})
-    if(OpenMP_CXX_FOUND OR OPENMP_FOUND)
-      target_link_libraries(runxgboost PUBLIC ${OpenMP_CXX_FLAGS})
-    endif()
   endif()
 
   # Test
@@ -271,9 +268,6 @@ else()
     target_compile_definitions(testxgboost PUBLIC ${xgboost_defs})
     target_include_directories(testxgboost PUBLIC src/tree)    
     target_link_libraries(testxgboost GTest::main xgboost)
-    if(OpenMP_CXX_FOUND OR OPENMP_FOUND)    
-      target_link_libraries(testxgboost PUBLIC ${OpenMP_CXX_FLAGS})
-    endif()
     add_test(TestXGBoost testxgboost)
   endif()
   
@@ -289,6 +283,13 @@ foreach(target ${xgboost_targets})
   target_compile_definitions(${target} PUBLIC ${xgboost_defs})
   if(OpenMP_CXX_FOUND OR OPENMP_FOUND)
     target_compile_options(${target} PUBLIC ${OpenMP_CXX_FLAGS})
+
+    get_target_property(target_type ${target} TYPE)
+    string( COMPARE EQUAL "${target_type}" "OBJECT_LIBRARY" is_object_library)
+    if(NOT ${is_object_library})
+      target_link_libraries(${target} ${OpenMP_CXX_FLAGS})
+    endif()
+    
   endif()
 endforeach()
 
