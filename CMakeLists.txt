@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 3.2)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL "https://github.com/ruslo/hunter/archive/v0.19.223.tar.gz"
-  SHA1 "cada7a7509ff2eac9c83a282e0692176a2dd2bab"
+  URL "https://github.com/ruslo/hunter/archive/v0.19.225.tar.gz"
+  SHA1 "96acb7ba4f1023018d271d8b53f229c5d3eff9e7"
 )
 
 project(xgboost VERSION 0.7.0)
