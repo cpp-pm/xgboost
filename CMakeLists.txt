@@ -4,8 +4,8 @@ include("cmake/HunterGate.cmake")
 
 ### Hunter snapshot that will be used ###
 HunterGate(
-  URL "https://github.com/ruslo/hunter/archive/v0.19.35.tar.gz"
-  SHA1 "bacf59b6856e37964c8eb298a57e0f6ef37e56d6"
+  URL "https://github.com/ruslo/hunter/archive/v0.19.236.tar.gz"
+  SHA1 "b2e48b9eb3ced3e5f8121451335c4d510d6dbbc9"
   )
 
 project(xgboost VERSION 0.4.6)
@@ -18,9 +18,8 @@ if(COMPILER_SUPPORTS_NO_NARROWING)
 endif()
 
 ### Import sugar for source collection ###
-hunter_add_package(Sugar)
-include("${SUGAR_ROOT}/cmake/Sugar")
-include(sugar_include)
+hunter_add_package(sugar)
+find_package(sugar CONFIG REQUIRED)
 
 sugar_include(.)
 

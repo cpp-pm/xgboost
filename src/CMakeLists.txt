@@ -1,5 +1,3 @@
-include(sugar_include)
-
 sugar_include(.)
 
 ### Always build xgboost as a library
